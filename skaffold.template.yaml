@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta1
+kind: Config
+metadata:
+  name: repository-2
+build:
+  platforms: ["linux/amd64"]
+  artifacts:
+    - image: ${IMAGE_REPOSITORY}/repository-2
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  helm:
+    releases:
+    - name: repository-2 
+      chartPath: deploy/helm
+      valuesFiles:
+      - ${VALUES_LOCATION}/repository-2.yaml
