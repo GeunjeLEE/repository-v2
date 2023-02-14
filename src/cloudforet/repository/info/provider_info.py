@@ -35,5 +35,5 @@ def ProviderInfo(provider_vo: Provider, minimal=False):
 
 
 def ProvidersInfo(provider_vos: Provider, total_count, **kwargs):
-    return provider_pb2.ProviderInfo(result=list(map(functools.partial(ProviderInfo, **kwargs), provider_vos)),
+    return provider_pb2.ProviderInfo(results=list(map(functools.partial(ProviderInfo, **kwargs), provider_vos)),
                                      total_count=total_count)

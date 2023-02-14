@@ -18,9 +18,6 @@ class RemoteRepositoryService(BaseService):
         return self.remote_repository_mgr.get_remote_repository(params['name'])
 
     @transaction(append_meta={'authorization.scope': 'PUBLIC'})
-    @append_query_filter(['name', 'version'])
     @append_keyword_filter(['name'])
     def list(self, params):
-        query = params.get('query', {})
-
-        return self.remote_repository_mgr.list_remote_repository(query)
+        return self.remote_repository_mgr.list_remote_repositories(params.get('name'), params.get('version'))

@@ -12,11 +12,11 @@ class RemoteRepository(BaseAPI, remote_repository_pb2_grpc.RemoteRepositoryServi
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
         with self.locator.get_service(RemoteRepositoryService, metadata) as remote_repository_svc:
-            remote_repository_vo = remote_repository_svc.get(params)
-            return self.locator.get_info(RemoteRepositoryInfo, remote_repository_vo)
+            remote_repository_data = remote_repository_svc.get(params)
+            return self.locator.get_info(RemoteRepositoryInfo, remote_repository_data)
 
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
         with self.locator.get_service(RemoteRepositoryService, metadata) as remote_repository_svc:
-            remote_repository_vos, total_count = remote_repository_svc.list(params)
-            return self.locator.get_info(RemoteRepositoriesInfo, total_count)
+            remote_repository_data, total_count = remote_repository_svc.list(params)
+            return self.locator.get_info(RemoteRepositoriesInfo, remote_repository_data, total_count)
