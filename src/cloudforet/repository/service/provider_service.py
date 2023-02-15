@@ -49,17 +49,8 @@ class ProviderService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['provider', 'name', 'sync_mode', 'domain_id'])
-    @append_keyword_filter(['provider', 'name']) # using keyword when user search in console with keyword
+    @append_keyword_filter(['provider', 'name'])
     def list(self, params):
         query = params.get('query', {})
 
         return self.provider_mgr.list_providers(query)
-
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @append_keyword_filter(['provider', 'name']) # using keyword when user search in console with keyword
-    def stat(self, params):
-        query = params.get('query', {})
-
-        return self.provider_mgr.stat_providers(query)

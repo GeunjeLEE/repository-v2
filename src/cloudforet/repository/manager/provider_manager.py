@@ -5,13 +5,6 @@ from cloudforet.repository.model.provider_model import Provider
 
 _LOGGER = logging.getLogger(__name__)
 
-'''
-TODO:
-- keyword argument
-- rollback / transaction
-- python-core model
-'''
-
 
 class ProviderManager(BaseManager):
 
@@ -55,10 +48,3 @@ class ProviderManager(BaseManager):
 
     def list_providers(self, query):
         return self.provider_model.query(**query)
-
-    def stat_providers(self, query):
-        return self.provider_model.stat(**query)
-
-
-
-

@@ -2,7 +2,7 @@ from spaceone.api.repository.v2 import provider_pb2, provider_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
 from cloudforet.repository.service.provider_service import ProviderService
 from cloudforet.repository.info.provider_info import ProviderInfo, ProvidersInfo
-from cloudforet.repository.info.common_info import StatisticsInfo, EmptyInfo
+from cloudforet.repository.info.common_info import EmptyInfo
 
 
 class Provider(BaseAPI, provider_pb2_grpc.ProviderServicer):
@@ -45,8 +45,3 @@ class Provider(BaseAPI, provider_pb2_grpc.ProviderServicer):
         with self.locator.get_service(ProviderService, metadata) as provider_svc:
             provider_vos, total_count = provider_svc.list(params)
             return self.locator.get_info(ProvidersInfo, provider_vos, total_count, minimal=self.get_minimal(params))
-
-    def stat(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        with self.locator.get_service(ProviderService, metadata) as provider_svc:
-            return self.locator.get_info(StatisticsInfo, provider_svc.stat(params))

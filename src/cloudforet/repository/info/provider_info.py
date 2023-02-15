@@ -24,7 +24,7 @@ def ProviderInfo(provider_vo: Provider, minimal=False):
             'schema_options': change_struct_type(provider_vo.schema_options),
             'color': provider_vo.color,
             'icon': provider_vo.icon,
-            'reference_url': provider_vo.reference_url,
+            'reference': change_struct_type(provider_vo.reference),
             'labels': change_list_value_type(provider_vo.labels),
             'tags': change_struct_type(provider_vo.tags),
             'domain_id': provider_vo.domain_id,
@@ -35,5 +35,5 @@ def ProviderInfo(provider_vo: Provider, minimal=False):
 
 
 def ProvidersInfo(provider_vos: Provider, total_count, **kwargs):
-    return provider_pb2.ProviderInfo(results=list(map(functools.partial(ProviderInfo, **kwargs), provider_vos)),
+    return provider_pb2.ProvidersInfo(results=list(map(functools.partial(ProviderInfo, **kwargs), provider_vos)),
                                      total_count=total_count)

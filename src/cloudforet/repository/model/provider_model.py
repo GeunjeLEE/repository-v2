@@ -14,7 +14,7 @@ class Provider(MongoModel):
     schema_options = DictField()
     color = StringField(max_length=7, default=None, null=True)
     icon = StringField(max_length=255, default=None, null=True)
-    reference_url = StringField(max_length=255, default=None, null=True)
+    reference = DictField()
     labels = ListField(StringField(max_length=255))
     tags = DictField()
     domain_id = StringField(max_length=255)
