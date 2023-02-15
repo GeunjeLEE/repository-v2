@@ -1,10 +1,8 @@
 import logging
-import sys
 
 from spaceone.core.manager import BaseManager
 
 from cloudforet.repository.error import *
-from cloudforet.repository.model.remote_repository_model import RemoteRepository
 from cloudforet.repository.connector.remote_repository_connector import RemoteRepositoryConnector
 
 _LOGGER = logging.getLogger(__name__)
