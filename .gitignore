@@ -11,3 +11,5 @@ __pycache__
 venv
 local-conf.yml
 skaffold.yaml
+reports
+.pytest_cache
