@@ -32,7 +32,7 @@ class ProviderManager(BaseManager):
             _LOGGER.info(f'[ROLLBACK] Update provider: {provider_vo.provider}')
             provider_vo.update(old_data)
 
-        self.transaction.add_rollback(_rollback, provider_vo.to_dict()) # to_dict = old data
+        self.transaction.add_rollback(_rollback, provider_vo.to_dict())
 
         return provider_vo.update(params)
 
