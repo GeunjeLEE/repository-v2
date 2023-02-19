@@ -8,8 +8,8 @@ _LOGGER = logging.getLogger(__name__)
 
 class RemoteRepositoryService(BaseService):
 
-    def __init__(self, metadata):
-        super().__init__(metadata)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.remote_repository_mgr: RemoteRepositoryManager = self.locator.get_manager(RemoteRepositoryManager)
 
     @transaction(append_meta={'authorization.scope': 'PUBLIC'})
