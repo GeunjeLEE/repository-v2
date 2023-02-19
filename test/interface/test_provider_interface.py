@@ -1,4 +1,3 @@
-import os
 import unittest
 
 from google.protobuf.json_format import MessageToDict
@@ -26,16 +25,17 @@ class TestProvider(unittest.TestCase):
             'provider': 'aws',
             'name': utils.random_string(2),
             'sync_mode': 'AUTOMATIC',
-            'sync_options': {
-                'source_type': 'GITHUB',
-                'source': {
-                    'url': 'https://github.com/cloudforet-io/managed-repository-resources.git',
-                    'path': '/provider/aws.yaml',
-                    'secret_data': {
-                        'token': 'token'
-                    }
-                }
-            },
+            'sync_options': {},
+            # 'sync_options': {
+            #     'source_type': 'GITHUB',
+            #     'source': {
+            #         'url': 'https://github.com/cloudforet-io/managed-repository-resources.git',
+            #         'path': '/provider/aws.yaml',
+            #         'secret_data': {
+            #             'token': 'token'
+            #         }
+            #     }
+            # },
             'description': {
                 'identity.ServiceAccount': {
                     'field': 'contents'
@@ -48,7 +48,7 @@ class TestProvider(unittest.TestCase):
                     'aws.assume_role'
                 ]
             },
-            'schema_options': {
+            'capability': {
                 'trusted_service_account': 'ENABLED'
             },
             'color': 'Red',
@@ -85,21 +85,23 @@ class TestProvider(unittest.TestCase):
     def test_create_provider(self):
         params = self.provider_info
 
-        self.provider = self.repository_v2.Provider.create(params)
+        provider = self.repository_v2.Provider.create(params)
 
-        self.assertEqual(self.provider.name, params['name'])
-        self.assertEqual(self.provider.provider, params['provider'])
-        self.assertEqual(self.provider.domain_id, params['domain_id'])
-        self.assertEqual(self.provider.sync_mode, self.sync_mode[params['sync_mode']])
-        self.assertDictEqual(MessageToDict(self.provider.sync_options), params['sync_options'])
-        self.assertDictEqual(MessageToDict(self.provider.description), params['description'])
-        self.assertDictEqual(MessageToDict(self.provider.schema), params['schema'])
-        self.assertDictEqual(MessageToDict(self.provider.schema_options), params['schema_options'])
-        self.assertEqual(self.provider.color, params['color'])
-        self.assertEqual(self.provider.icon, params['icon'])
-        self.assertDictEqual(MessageToDict(self.provider.reference), params['reference'])
-        self.assertListEqual(MessageToDict(self.provider.labels), params['labels'])# How about variable has list type?
-        self.assertDictEqual(MessageToDict(self.provider.tags), params['tags'])
+        self.assertEqual(provider.name, params['name'])
+        self.assertEqual(provider.provider, params['provider'])
+        self.assertEqual(provider.domain_id, params['domain_id'])
+        self.assertEqual(provider.sync_mode, self.sync_mode[params['sync_mode']])
+        self.assertDictEqual(MessageToDict(provider.sync_options, preserving_proto_field_name=True),
+                             params['sync_options'])
+        self.assertDictEqual(MessageToDict(provider.description), params['description'])
+        self.assertDictEqual(MessageToDict(provider.schema), params['schema'])
+        self.assertDictEqual(MessageToDict(provider.capability, preserving_proto_field_name=True),
+                             params['capability'])
+        self.assertEqual(provider.color, params['color'])
+        self.assertEqual(provider.icon, params['icon'])
+        self.assertDictEqual(MessageToDict(provider.reference), params['reference'])
+        self.assertListEqual(MessageToDict(provider.labels), params['labels'])
+        self.assertDictEqual(MessageToDict(provider.tags), params['tags'])
 
     def test_get_provider(self):
         self.test_create_provider()
