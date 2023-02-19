@@ -24,7 +24,4 @@ class RemoteRepositoryManager(BaseManager):
         raise ERROR_NO_REMOTE_REPOSITORY(name=name)
 
     def list_remote_repositories(self, name=None, version=None):
-        remote_repository_list_of_dict = self.remote_repository_connector.list_remote_repositories(name=name,
-                                                                                                   version=version)
-        return remote_repository_list_of_dict
-
+        return self.remote_repository_connector.list_remote_repositories(name=name, version=version)
