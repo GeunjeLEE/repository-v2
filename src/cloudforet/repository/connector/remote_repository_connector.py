@@ -33,34 +33,12 @@ class RemoteRepositoryConnector(BaseConnector):
 
     def _filter(self, name, version):
         if name:
-            self._del_by_keyword('name', name)
+            self._pop('name', name)
 
         if version:
-            self._del_by_keyword('version', version)
+            self._pop('version', version)
 
-    def _del_by_keyword(self, key, value):
+    def _pop(self, key, value):
         for index, remote_repository in enumerate(self.remote_repositories):
             if value != remote_repository[key]:
                 del self.remote_repositories[index]
-
-    # TODO: delete the code below after code review.
-    # @staticmethod
-    # def _list_remote_repositories_filter(remote_repositories, name, version):
-    #     filtered_remote_repositories = []
-    #
-    #     if name and version:
-    #         for repository in remote_repositories:
-    #             if name == repository['name'] and version == repository['version']:
-    #                 filtered_remote_repositories.append(repository)
-    #     elif name:
-    #         for repository in remote_repositories:
-    #             if name == repository['name']:
-    #                 filtered_remote_repositories.append(repository)
-    #     elif version:
-    #         for repository in remote_repositories:
-    #             if version == repository['version']:
-    #                 filtered_remote_repositories.append(repository)
-    #     else:
-    #         filtered_remote_repositories = remote_repositories
-    #
-    #     return filtered_remote_repositories, len(filtered_remote_repositories)

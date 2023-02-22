@@ -19,12 +19,12 @@ def ProviderInfo(provider_vo: Provider, minimal=False):
     if not minimal:
         info.update({
             'sync_options': SyncOptions(provider_vo.sync_options),
-            'description': change_struct_type(provider_vo.description),
-            'schema': change_struct_type(provider_vo.schema),
+            'description': Description(provider_vo.description),
+            'schema': Schema(provider_vo.schema),
             'capability': Capability(provider_vo.capability),
             'color': provider_vo.color,
             'icon': provider_vo.icon,
-            'reference': change_struct_type(provider_vo.reference),
+            'reference': Refernece(provider_vo.reference),
             'labels': change_list_value_type(provider_vo.labels),
             'tags': change_struct_type(provider_vo.tags),
             'domain_id': provider_vo.domain_id,
@@ -50,11 +50,57 @@ def SyncOptions(sync_options):
     return None
 
 
+def Schema(schema):
+    if schema:
+        array_of_object = []
+        for schema_vo in schema:
+            info = {
+                'resource_type': schema_vo.resource_type,
+                'secret_type': schema_vo.secret_type,
+                'schema_id': schema_vo.schema_id
+            }
+            array_of_object.append(provider_pb2.Schema(**info))
+
+        return array_of_object
+
+    return None
+
+
 def Capability(capability):
     if capability:
         info = {
             'trusted_service_account': capability.trusted_service_account
         }
         return provider_pb2.Capability(**info)
+
+    return None
+
+
+def Description(description):
+    if description:
+        array_of_object = []
+        for description_vo in description:
+            info = {
+                'resource_type': description_vo.resource_type,
+                'body': description_vo.body
+            }
+            array_of_object.append(provider_pb2.Description(**info))
+
+        return array_of_object
+
+    return None
+
+
+def Refernece(reference):
+    if reference:
+        array_of_object = []
+        for reference_vo in reference:
+            info = {
+                'resource_type': reference_vo.resource_type,
+                'link': reference_vo.link,
+            }
+            array_of_object.append(provider_pb2.Reference(**info))
+
+        return array_of_object
 
     return None

@@ -36,8 +36,8 @@ class ProviderManager(BaseManager):
 
         return provider_vo.update(params)
 
-    def sync_provider(self, params):
-        pass
+    # def sync_provider(self, params):
+    #     pass
 
     def delete_provider(self, params):
         provider_vo: Provider = self.get_provider(params['provider'], params['domain_id'])
