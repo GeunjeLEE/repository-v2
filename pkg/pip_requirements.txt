@@ -3,3 +3,4 @@ spaceone-api
 mongoengine
 PyGithub
 schema
+yaml

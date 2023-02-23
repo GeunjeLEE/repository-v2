@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from spaceone.core.connector import BaseConnector
@@ -15,30 +16,35 @@ class RemoteRepositoryConnector(BaseConnector):
         self.remote_repositories = config.get_global("REMOTE_REPOSITORIES", [])
 
     def get_remote_repository(self, name):
-        if self.remote_repositories:
-            for repository in self.remote_repositories:
-                if name == repository['name']:
-                    return repository
+        for repository in self.remote_repositories:
+            if name == repository.get('name'):
+                return repository
 
         return {}
 
     def list_remote_repositories(self, name, version):
-        if self.remote_repositories:
-            if name or version:
-                self._filter(name, version)
+        remote_repositories = self.remote_repositories
 
-            return self.remote_repositories, len(self.remote_repositories)
+        if name or version:
+            remote_repositories = self._filter(name, version)
 
-        return [], 0
+        return remote_repositories, len(remote_repositories)
 
     def _filter(self, name, version):
+        _remote_repositories = copy.deepcopy(self.remote_repositories)
+
         if name:
-            self._pop('name', name)
+            self._pop('name', name, _remote_repositories)
 
         if version:
-            self._pop('version', version)
+            self._pop('version', version, _remote_repositories)
 
-    def _pop(self, key, value):
-        for index, remote_repository in enumerate(self.remote_repositories):
+        return _remote_repositories
+
+    @staticmethod
+    def _pop(key, value, remote_repositories):
+        for index, remote_repository in enumerate(remote_repositories):
             if value != remote_repository[key]:
-                del self.remote_repositories[index]
+                del remote_repositories[index]
+
+

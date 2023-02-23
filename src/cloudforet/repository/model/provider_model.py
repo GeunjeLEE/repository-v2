@@ -33,7 +33,7 @@ class Provider(MongoModel):
     provider = StringField(max_length=40, required=True, unique_with='domain_id')
     name = StringField(max_length=255, required=True)
     sync_mode = StringField(default='NONE', choices=('NONE', 'MANUAL', 'AUTOMATIC'))
-    sync_options = EmbeddedDocumentField(SyncOptions, default=None)
+    sync_options = EmbeddedDocumentField(SyncOptions, default={})
     description = EmbeddedDocumentListField(Description, default=None)
     schema = EmbeddedDocumentListField(Schema, default=None)
     capability = EmbeddedDocumentField(Capability, default=None)

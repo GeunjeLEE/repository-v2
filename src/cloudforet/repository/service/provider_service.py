@@ -25,31 +25,35 @@ class ProviderService(BaseService):
 
         # This is code for phase 3
         if secret_data and params['sync_mode'] == 'AUTOMATIC':
-            self.github_mgr.create_webhook(params, secret_data)
+            self._create_webhook_into_github(params, secret_data)
 
         return self.provider_mgr.create_provider(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def update(self, params):
+        self._validate_data(params)
+
+        params, secret_data = self._validate_sync_options(params)
         provider_vo = self.provider_mgr.get_provider(params['provider'], params['domain_id'])
+
+        # This is code for phase 3
+        if secret_data and params['sync_mode'] == 'AUTOMATIC' and provider_vo.sync_mode != 'AUTOMATIC':
+            self._create_webhook_into_github(params, secret_data)
+
         return self.provider_mgr.update_provider_by_vo(params, provider_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def sync(self, params):
-        # This is cod for phase 2
+        # This is code for phase 2
         provider_vo = self.get(params)
+        self._check_sync_mode(provider_vo.sync_mode)
 
-        if provider_vo.sync_mode not in ['MANUAL', 'AUTOMATIC']:
-            raise ERROR_UNSUPPORT_SYNC_MODE(sync_mode=provider_vo.sync_mode)
-
-        url = provider_vo.sync_options.source['url'].replace('https://github.com/', '')
+        repo_name = provider_vo.sync_options.source['url'].replace('https://github.com/', '')
         path = provider_vo.sync_options.source['path']
-        provider_dict = self.github_mgr.get_provider(url, path)
-
-        if provider_dict['sync_mode'] not in ['MANUAL', 'AUTOMATIC']:
-            raise ERROR_UNSUPPORT_SYNC_MODE(sync_mode=provider_dict['sync_mode'])
+        provider_dict = self.github_mgr.get_provider(repo_name, path)
+        self._check_sync_mode(provider_dict['sync_mode'])
 
         provider_dict, _ = self._validate_sync_options(provider_dict)
 
@@ -73,6 +77,15 @@ class ProviderService(BaseService):
         query = params.get('query', {})
 
         return self.provider_mgr.list_providers(query)
+
+    def _create_webhook_into_github(self, params, secret_data):
+        config = {
+            'webhook_url': 'https://cloudforet.io', # This is temporary webhook url.
+            'token': secret_data['token'],
+            'repo_name': params['sync_options']['source']['url'].replace('https://github.com/', '')
+
+        }
+        self.github_mgr.create_webhook(config)
 
     @staticmethod
     def _validate_sync_options(params):
@@ -127,3 +140,8 @@ class ProviderService(BaseService):
                     schema.validate(data)
                 except Exception as e:
                     raise ERROR_INVALID_DATA_SCHEMA(error=e)
+
+    @staticmethod
+    def _check_sync_mode(sync_mode):
+        if sync_mode not in ['MANUAL', 'AUTOMATIC']:
+            raise ERROR_UNSUPPORT_SYNC_MODE(sync_mode=sync_mode)

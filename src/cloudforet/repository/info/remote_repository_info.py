@@ -7,14 +7,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def RemoteRepositoryInfo(remote_repository_dict: dict):
-    info = {
-        'name': remote_repository_dict['name'],
-        'description': remote_repository_dict['description'],
-        'endpoint': remote_repository_dict['endpoint'],
-        'version': remote_repository_dict['version'],
-    }
-
-    return remote_repository_pb2.RemoteRepositoryInfo(**info)
+    return remote_repository_pb2.RemoteRepositoryInfo(**remote_repository_dict)
 
 
 def RemoteRepositoriesInfo(remote_repository_data, total_count, **kwargs):
