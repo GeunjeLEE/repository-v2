@@ -1,5 +1,5 @@
 #
-#   Copyright 2020 The SpaceONE Authors.
+#   Copyright 2023 The Cloudforet Authors.
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ with open('VERSION', 'r') as f:
     f.close()
 
 setup(
-    name='spaceone-repository-2',
+    name='cloudforet-repository-grpc',
     version=VERSION,
-    description='Cloudforet repository v2 service',
+    description='Cloudforet repository grpc service',
     long_description='',
     url='https://cloudforet.io//',
     author='MEGAZONE Cloud Platform Lab CloudONE TEAM',
@@ -33,11 +33,7 @@ setup(
     install_requires=[
         'spaceone-core',
         'spaceone-api',
-        'mongoengine',
-        'python-consul',
-        'schematics',
-        'boto3',
-        'requests'
+        'mongoengine'
     ],
     zip_safe=False,
 )

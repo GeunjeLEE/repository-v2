@@ -1,8 +1,6 @@
 spaceone-core
 spaceone-api
 mongoengine
-python-consul
-schematics
-boto3
-requests
-mongomock
+PyGithub
+schema
+yaml

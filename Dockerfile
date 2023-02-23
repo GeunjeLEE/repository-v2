@@ -35,4 +35,4 @@ RUN python3 setup.py install && \
 EXPOSE ${SPACEONE_PORT}
 
 ENTRYPOINT ["spaceone"]
-CMD ["grpc", "spaceone.repository-2", "-m", "/opt"]
+CMD ["grpc", "cloudforet.repository", "-m", "/opt"]
