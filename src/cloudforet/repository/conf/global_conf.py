@@ -9,3 +9,5 @@ DATABASES = {
     }
 }
 REMOTE_REPOSITORIES = []
+
+GITHUB_READ_TOKEN = ''
