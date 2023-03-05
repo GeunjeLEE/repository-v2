@@ -12,7 +12,7 @@ class ProviderManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.provider_model: Provider = self.locator.get_model(Provider)
 
-    def create_provider(self, params):
+    def create_provider(self, params: dict):
         def _rollback(provider_vo: Provider):
             _LOGGER.info(f'[ROLLBACK] Delete provider : {provider_vo.provider}')
             provider_vo.delete()
@@ -22,7 +22,7 @@ class ProviderManager(BaseManager):
 
         return provider_vo
 
-    def update_provider(self, params):
+    def update_provider(self, params: dict):
         provider_vo: Provider = self.get_provider(params['provider'], params['domain_id'])
 
         return self.update_provider_by_vo(params, provider_vo)
@@ -36,15 +36,12 @@ class ProviderManager(BaseManager):
 
         return provider_vo.update(params)
 
-    # def sync_provider(self, params):
-    #     pass
-
-    def delete_provider(self, params):
+    def delete_provider(self, params: dict):
         provider_vo: Provider = self.get_provider(params['provider'], params['domain_id'])
         provider_vo.delete()
 
-    def get_provider(self, provider, domain_id, only=None):
+    def get_provider(self, provider: str, domain_id: str, only=None):
         return self.provider_model.get(provider=provider, domain_id=domain_id, only=only)
 
-    def list_providers(self, query):
+    def list_providers(self, query: dict):
         return self.provider_model.query(**query)

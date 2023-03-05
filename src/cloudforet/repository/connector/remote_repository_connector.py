@@ -15,14 +15,14 @@ class RemoteRepositoryConnector(BaseConnector):
         super().__init__(**kwargs)
         self.remote_repositories = config.get_global("REMOTE_REPOSITORIES", [])
 
-    def get_remote_repository(self, name):
+    def get_remote_repository(self, name: str):
         for repository in self.remote_repositories:
             if name == repository.get('name'):
                 return repository
 
         return {}
 
-    def list_remote_repositories(self, name, version):
+    def list_remote_repositories(self, name: str, version: str):
         remote_repositories = self.remote_repositories
 
         if name or version:
@@ -30,7 +30,7 @@ class RemoteRepositoryConnector(BaseConnector):
 
         return remote_repositories, len(remote_repositories)
 
-    def _filter(self, name, version):
+    def _filter(self, name: str, version: str):
         _remote_repositories = copy.deepcopy(self.remote_repositories)
 
         if name:
@@ -42,7 +42,7 @@ class RemoteRepositoryConnector(BaseConnector):
         return _remote_repositories
 
     @staticmethod
-    def _pop(key, value, remote_repositories):
+    def _pop(key: str, value: str, remote_repositories: list):
         for index, remote_repository in enumerate(remote_repositories):
             if value != remote_repository[key]:
                 del remote_repositories[index]
