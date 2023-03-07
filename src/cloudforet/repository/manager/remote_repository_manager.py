@@ -15,7 +15,7 @@ class RemoteRepositoryManager(BaseManager):
         self.remote_repository_connector: RemoteRepositoryConnector = \
             self.locator.get_connector(RemoteRepositoryConnector)
 
-    def get_remote_repository(self, name):
+    def get_remote_repository(self, name: str):
         remote_repository_dict = self.remote_repository_connector.get_remote_repository(name)
 
         if remote_repository_dict:
