@@ -27,8 +27,8 @@ class ProviderService(BaseService):
             path = f'{directory}/{file}'
             provider_dict = self.github_mgr.get_provider(repo_name, path)
             self._validate_data(provider_dict)
-
-            params = dict(list(provider_dict.items()) + list(params.items()))
+            provider_dict.update(params)
+            params = provider_dict
 
         # TODO: phase 3
         # if secret_data and params['sync_mode'] == 'AUTOMATIC':
