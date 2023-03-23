@@ -13,20 +13,20 @@ class Provider(BaseAPI, provider_pb2_grpc.ProviderServicer):
     def create(self, request, context):
         params, metadata = self.parse_request(request, context)
         with self.locator.get_service(ProviderService, metadata) as provider_svc:
-            provider_vo = provider_svc.create(params)
-            return self.locator.get_info(ProviderInfo, provider_vo)
+            provider_data = provider_svc.create(params)
+            return self.locator.get_info(ProviderInfo, provider_data)
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
         with self.locator.get_service(ProviderService, metadata) as provider_svc:
-            provider_vo = provider_svc.update(params)
-            return self.locator.get_info(ProviderInfo, provider_vo)
+            provider_data = provider_svc.update(params)
+            return self.locator.get_info(ProviderInfo, provider_data)
 
     def sync(self, request, context):
         params, metadata = self.parse_request(request, context)
         with self.locator.get_service(ProviderService, metadata) as provider_svc:
-            provider_vo = provider_svc.sync(params)
-            return self.locator.get_info(ProviderInfo, provider_vo)
+            provider_data = provider_svc.sync(params)
+            return self.locator.get_info(ProviderInfo, provider_data)
 
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
@@ -37,11 +37,11 @@ class Provider(BaseAPI, provider_pb2_grpc.ProviderServicer):
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
         with self.locator.get_service(ProviderService, metadata) as provider_svc:
-            provider_vo = provider_svc.get(params)
-            return self.locator.get_info(ProviderInfo, provider_vo)
+            provider_data = provider_svc.get(params)
+            return self.locator.get_info(ProviderInfo, provider_data)
 
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
         with self.locator.get_service(ProviderService, metadata) as provider_svc:
-            provider_vos, total_count = provider_svc.list(params)
-            return self.locator.get_info(ProvidersInfo, provider_vos, total_count, minimal=self.get_minimal(params))
+            providers_data, total_count = provider_svc.list(params)
+            return self.locator.get_info(ProvidersInfo, providers_data, total_count, minimal=self.get_minimal(params))

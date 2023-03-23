@@ -3,6 +3,7 @@ import logging
 from schema import Schema, Or, Optional, Regex
 from spaceone.core.service import *
 from cloudforet.repository.manager.provider_manager import ProviderManager
+from cloudforet.repository.manager.remote_repository_manager import RemoteRepositoryManager
 from cloudforet.repository.manager.github_manager import GithubManager
 from cloudforet.repository.error.provider import *
 
@@ -14,6 +15,7 @@ class ProviderService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.provider_mgr: ProviderManager = self.locator.get_manager(ProviderManager)
+        self.remote_repository_mgr: RemoteRepositoryManager = self.locator.get_manager(RemoteRepositoryManager)
         self.github_mgr: GithubManager = self.locator.get_manager(GithubManager)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -25,10 +27,10 @@ class ProviderService(BaseService):
         if params.get('sync_mode') in ['MANUAL', 'AUTOMATIC']:
             repo_name, directory, file = self._parse_source_url(params['sync_options']['source']['url'])
             path = f'{directory}/{file}'
-            provider_dict = self.github_mgr.get_provider(repo_name, path)
-            self._validate_data(provider_dict)
-            provider_dict.update(params)
-            params = provider_dict
+            provider_data = self.github_mgr.get_provider(repo_name, path)
+            self._validate_data(provider_data)
+            provider_data.update(params)
+            params = provider_data
 
         # TODO: phase 3
         # if secret_data and params['sync_mode'] == 'AUTOMATIC':
@@ -40,7 +42,7 @@ class ProviderService(BaseService):
     @check_required(['provider', 'domain_id'])
     def update(self, params: dict):
         params, secret_data = self._validate_data(params)
-        provider_vo = self.provider_mgr.get_provider(params['provider'], params['domain_id'])
+        provider_vo = self.provider_mgr.get_provider_as_vo(params['provider'], params['domain_id'])
 
         # TODO: phase 3
         #      The code that prevent duplicate webhook creation.
@@ -52,22 +54,30 @@ class ProviderService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def sync(self, params: dict):
-        provider_vo = self.get(params)
+        provider_vo = self.provider_mgr.get_provider_as_vo(params['provider'], params['domain_id'])
         self._validate_sync_mode(provider_vo.sync_mode)
 
         repo_name, directory, file = self._parse_source_url(provider_vo['sync_options']['source']['url'])
         path = f'{directory}/{file}'
-        provider_dict = self.github_mgr.get_provider(repo_name, path)
+        provider_data = self.github_mgr.get_provider(repo_name, path)
 
-        provider_dict, _ = self._validate_data(provider_dict)
-        self._validate_sync_mode(provider_dict['sync_mode'])
+        provider_data, _ = self._validate_data(provider_data)
+        self._validate_sync_mode(provider_data['sync_mode'])
 
-        return self.provider_mgr.update_provider_by_vo(provider_dict, provider_vo)
+        return self.provider_mgr.update_provider_by_vo(provider_data, provider_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def get(self, params: dict):
-        return self.provider_mgr.get_provider(params['provider'], params['domain_id'], params.get('only'))
+        try:
+            return self.provider_mgr.get_provider(params['provider'], params['domain_id'], params.get('only'))
+        except Exception:
+            pass
+
+        if provider_vo := self.remote_repository_mgr.get_provider(params['provider'], params['domain_id'], params.get('only')):
+            return provider_vo
+
+        raise ERROR_NOT_FOUND(key='provider', value=params['provider'])
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
@@ -76,12 +86,18 @@ class ProviderService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['provider', 'name', 'sync_mode', 'domain_id'])
+    @append_query_filter(['provider', 'name', 'sync_mode', 'remote_repository_name', 'domain_id'])
     @append_keyword_filter(['provider', 'name'])
     def list(self, params: dict):
         query = params.get('query', {})
 
-        return self.provider_mgr.list_providers(query)
+        local_providers_data, local_total_count = self.provider_mgr.list_providers(query)
+        remote_providers_data, remote_total_count = self.remote_repository_mgr.list_providers(query)
+
+        providers = local_providers_data + remote_providers_data
+        total_count = local_total_count + remote_total_count
+
+        return providers, total_count
 
     # TODO: phase 3
     def _create_webhook_into_github(self, params: dict, secret_data: dict):
@@ -124,7 +140,7 @@ class ProviderService(BaseService):
                 {
                     'resource_type': Or('identity.ServiceAccount', 'secret.TrustedSecret', 'secret.Secret'),
                     Optional('secret_type'): Or('GENERAL', 'TRUSTED'),
-                    'schema_id': Or('aws_service_account', 'aws_access_key', 'aws_assume_role')
+                    'schema_id': Or('aws-service-account', 'aws-access-key', 'aws-assume-role')
                 }
             ]),
             'description': Schema([
