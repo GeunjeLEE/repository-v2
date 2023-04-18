@@ -1,5 +1,6 @@
 import logging
 import copy
+import copy
 
 from spaceone.core.manager import BaseManager
 from cloudforet.repository.model.provider_model import Provider
@@ -23,6 +24,8 @@ class ProviderManager(BaseManager):
 
         provider_data = provider_vo.to_dict()
         return provider_data
+        provider_data = provider_vo.to_dict()
+        return provider_data
 
     def update_provider(self, params: dict):
         provider_vo: Provider = self.get_provider_as_vo(params['provider'], params['domain_id'])
@@ -36,6 +39,8 @@ class ProviderManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, provider_vo.to_dict())
 
+        provider_data = provider_vo.update(params).to_dict()
+        return provider_data
         provider_data = provider_vo.update(params).to_dict()
         return provider_data
 
@@ -53,24 +58,14 @@ class ProviderManager(BaseManager):
     def get_provider_as_vo(self, provider: str, domain_id: str, only=None):
         return self.provider_model.get(provider=provider, domain_id=domain_id, only=only)
 
-    def list_providers(self, query: dict):
-        """
-        :return: {
-            'results': list of dict,
-            'total_count': int
-        {
-        """
+    def filter_providers(self, **conditions):
+        return self.provider_model.filter(**conditions)
 
-        # The remote_repository_name filter doesn't work in local repository
-        filtered_query = copy.deepcopy(query)
-        for _, filter in enumerate(filtered_query['filter']):
+    def list_providers(self, query: dict):
+        for _, filter in enumerate(query['filter']):
             if filter['k'] == 'remote_repository_name':
                 return [], 0
 
-        provider_vos, total_count = self.provider_model.query(**filtered_query)
+        provider_vos, total_count = self.provider_model.query(**query)
 
-        providers_data = []
-        for provider_vo in provider_vos:
-            providers_data.append(provider_vo.to_dict())
-
-        return providers_data, total_count
+        return provider_vos, total_count

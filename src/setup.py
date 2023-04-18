@@ -33,7 +33,10 @@ setup(
     install_requires=[
         'spaceone-core',
         'spaceone-api',
-        'mongoengine'
+        'mongoengine',
+        'PyGithub',
+        'schema',
+        'pyyaml'
     ],
     zip_safe=False,
 )

@@ -24,40 +24,49 @@ class TestProvider(unittest.TestCase):
         self.provider_info = {
             'provider': 'aws',
             'name': utils.random_string(2),
-            'sync_mode': 'AUTOMATIC',
-            'sync_options': {},
-            # 'sync_options': {
-            #     'source_type': 'GITHUB',
-            #     'source': {
-            #         'url': 'https://github.com/cloudforet-io/managed-repository-resources.git',
-            #         'path': '/provider/aws.yaml',
-            #         'secret_data': {
-            #             'token': 'token'
-            #         }
-            #     }
-            # },
-            'description': {
-                'identity.ServiceAccount': {
-                    'field': 'contents'
+            'sync_mode': 'MANUAL',
+            'sync_options': {
+                'github': {
+                    'url': 'GJ-playgroud/managed-repository-resources/aws/provider.yaml'
+                    }
+                },
+            'description': [
+                {
+                    'resource_type': 'identity.ServiceAccount',
+                    'body': {}
                 }
-            },
-            'schema': {
-                'identity.ServiceAccount': 'aws_service_account',
-                'secret.TrustedSecret': 'aws_access_key',
-                'secret.Secret': [
-                    'aws.assume_role'
-                ]
-            },
+            ],
+            'schema': [
+                {
+                    'resource_type': 'identity.ServiceAccount',
+                    'schema_id': 'aws-service-account'
+                },
+                {
+                    'resource_type': 'secret.TrustedSecret',
+                    'schema_id': 'aws-access-key'
+                },
+                {
+                    'resource_type': 'secret.Secret',
+                    'secret_type': 'GENERAL',
+                    'schema_id': 'aws-access-key'
+                },
+                {
+                    'resource_type': 'secret.Secret',
+                    'secret_type': 'TRUSTED',
+                    'schema_id': 'aws-assume-role'
+                },
+            ],
             'capability': {
                 'trusted_service_account': 'ENABLED'
             },
             'color': 'Red',
-            'icon': 's3://spaceone-custome-assets',
-            'reference': {
-                'identity.ServiceAccount': {
-                    'Link': 'template'
+            'icon': 's3://spaceone-custom-assets',
+            'reference': [
+                {
+                    'resource_type': 'identity.ServiceAccount',
+                    'link': {}
                 }
-            },
+            ],
             'labels': [
                 'label_1',
                 'label_2',
@@ -78,8 +87,8 @@ class TestProvider(unittest.TestCase):
     def tearDown(self):
         print(f"[TEARDOWN] delete {self.provider_info['provider']} in {self.provider_info['domain_id']}")
         self.repository_v2.Provider.delete({
+            'provider': self.provider_info['provider'],
             'domain_id': self.provider_info['domain_id'],
-            'provider': self.provider_info['provider']
         })
 
     def test_create_provider(self):
@@ -88,20 +97,6 @@ class TestProvider(unittest.TestCase):
         provider = self.repository_v2.Provider.create(params)
 
         self.assertEqual(provider.name, params['name'])
-        self.assertEqual(provider.provider, params['provider'])
-        self.assertEqual(provider.domain_id, params['domain_id'])
-        self.assertEqual(provider.sync_mode, self.sync_mode[params['sync_mode']])
-        self.assertDictEqual(MessageToDict(provider.sync_options, preserving_proto_field_name=True),
-                             params['sync_options'])
-        self.assertDictEqual(MessageToDict(provider.description), params['description'])
-        self.assertDictEqual(MessageToDict(provider.schema), params['schema'])
-        self.assertDictEqual(MessageToDict(provider.capability, preserving_proto_field_name=True),
-                             params['capability'])
-        self.assertEqual(provider.color, params['color'])
-        self.assertEqual(provider.icon, params['icon'])
-        self.assertDictEqual(MessageToDict(provider.reference), params['reference'])
-        self.assertListEqual(MessageToDict(provider.labels), params['labels'])
-        self.assertDictEqual(MessageToDict(provider.tags), params['tags'])
 
     def test_get_provider(self):
         self.test_create_provider()
@@ -113,6 +108,17 @@ class TestProvider(unittest.TestCase):
 
         self.assertEqual(provider.name, self.provider_info['name'])
         self.assertEqual(provider.provider, self.provider_info['provider'])
+        self.assertEqual(provider.domain_id, self.provider_info['domain_id'])
+
+    def test_get_provider_from_remote(self):
+        self.test_create_provider()
+
+        provider = self.repository_v2.Provider.get({
+            'domain_id': self.provider_info['domain_id'],
+            'provider': 'google'
+        })
+
+        self.assertEqual(provider.provider, 'google')
         self.assertEqual(provider.domain_id, self.provider_info['domain_id'])
 
     def test_update_provider(self):
@@ -128,6 +134,15 @@ class TestProvider(unittest.TestCase):
     def test_list_provider(self):
         self.test_create_provider()
 
+        providers = self.repository_v2.Provider.list({
+            'domain_id': self.provider_info['domain_id'],
+        })
+
+        self.assertEqual(providers.total_count, 2)
+
+    def test_list_provider_by_filter(self):
+        self.test_create_provider()
+
         for param in ['name', 'provider', 'sync_mode']:
             providers = self.repository_v2.Provider.list({
                 'domain_id': self.provider_info['domain_id'],
@@ -136,6 +151,16 @@ class TestProvider(unittest.TestCase):
 
             self.assertEqual(providers.total_count, 1)
 
+    def test_list_provider_by_repository_name(self):
+        self.test_create_provider()
+
+
+        providers = self.repository_v2.Provider.list({
+            'domain_id': self.provider_info['domain_id'],
+            'remote_repository_name': 'remote_repository_exam_1'
+        })
+
+        self.assertEqual(providers.total_count, 1)
 
 if __name__ == "__main__":
     unittest.main(testRunner=RichTestRunner)

@@ -10,4 +10,8 @@ DATABASES = {
 }
 REMOTE_REPOSITORIES = []
 
-GITHUB_READ_TOKEN = ''
+CONNECTORS = {
+    'GitHubConnector': {
+        'GITHUB_READ_TOKEN': ''
+    }
+}

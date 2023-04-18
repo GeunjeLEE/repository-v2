@@ -1,81 +1,87 @@
 import logging
 
-from schema import Schema, Or, Optional, Regex
 from spaceone.core.service import *
 from cloudforet.repository.manager.provider_manager import ProviderManager
 from cloudforet.repository.manager.remote_repository_manager import RemoteRepositoryManager
-from cloudforet.repository.manager.github_manager import GithubManager
-from cloudforet.repository.error.provider import *
+from cloudforet.repository.manager.source_manager import SourceManager
+from cloudforet.repository.error.sync import *
+from cloudforet.repository.libs.sync_utils import validate_sync_mode, parse_source_url, validate_params_data_schema
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class ProviderService(BaseService):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.provider_mgr: ProviderManager = self.locator.get_manager(ProviderManager)
         self.remote_repository_mgr: RemoteRepositoryManager = self.locator.get_manager(RemoteRepositoryManager)
-        self.github_mgr: GithubManager = self.locator.get_manager(GithubManager)
+        self.source_mgr: SourceManager = self.locator.get_manager(SourceManager)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'name', 'domain_id'])
     def create(self, params: dict):
-        params, secret_data = self._validate_data(params)
+        params, secret_data = validate_params_data_schema(params)
 
-        # Verifying that the github repository and files actually exist before creating the provider resource.
         if params.get('sync_mode') in ['MANUAL', 'AUTOMATIC']:
-            repo_name, directory, file = self._parse_source_url(params['sync_options']['source']['url'])
+            source_type = list(params['sync_options'].keys())[0]
+            repo_name, directory, file = parse_source_url(params['sync_options'][source_type]['url'])
             path = f'{directory}/{file}'
-            provider_data = self.github_mgr.get_provider(repo_name, path)
-            self._validate_data(provider_data)
+            provider_data = self.source_mgr.get_source(source_type, repo_name, path)
+            validate_params_data_schema(provider_data)
             provider_data.update(params)
             params = provider_data
 
         # TODO: phase 3
         # if secret_data and params['sync_mode'] == 'AUTOMATIC':
-        #     self._create_webhook_into_github(params, secret_data)
+        #     self._create_webhook(params, secret_data)
 
         return self.provider_mgr.create_provider(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def update(self, params: dict):
-        params, secret_data = self._validate_data(params)
-        provider_vo = self.provider_mgr.get_provider_as_vo(params['provider'], params['domain_id'])
+        params, secret_data = validate_params_data_schema(params)
+        provider_vo = self.provider_mgr.get_provider(params['provider'], params['domain_id'])
 
         # TODO: phase 3
         #      The code that prevent duplicate webhook creation.
         # if secret_data and params['sync_mode'] == 'AUTOMATIC' and provider_vo.sync_mode != 'AUTOMATIC':
-        #     self._create_webhook_into_github(params, secret_data)
+        #     self._create_webhook(params, secret_data)
 
         return self.provider_mgr.update_provider_by_vo(params, provider_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def sync(self, params: dict):
-        provider_vo = self.provider_mgr.get_provider_as_vo(params['provider'], params['domain_id'])
-        self._validate_sync_mode(provider_vo.sync_mode)
+        provider_vo = self.provider_mgr.get_provider(params['provider'], params['domain_id'])
+        validate_sync_mode(provider_vo.sync_mode)
 
-        repo_name, directory, file = self._parse_source_url(provider_vo['sync_options']['source']['url'])
+        source_type = list(provider_vo['sync_options'].keys())[0]
+        repo_name, directory, file = parse_source_url(provider_vo['sync_options'][source_type]['url'])
         path = f'{directory}/{file}'
-        provider_data = self.github_mgr.get_provider(repo_name, path)
+        provider_data = self.source_mgr.get_source(source_type, repo_name, path)
 
-        provider_data, _ = self._validate_data(provider_data)
-        self._validate_sync_mode(provider_data['sync_mode'])
+        provider_data, _ = validate_params_data_schema(provider_data)
+        validate_sync_mode(provider_data['sync_mode'])
 
+        return self.provider_mgr.update_provider_by_vo(provider_data, provider_vo)
         return self.provider_mgr.update_provider_by_vo(provider_data, provider_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def get(self, params: dict):
-        try:
-            return self.provider_mgr.get_provider(params['provider'], params['domain_id'], params.get('only'))
-        except Exception:
-            pass
+        provider_vos = self.provider_mgr.filter_providers(provider=params['provider'], domain_id=params['domain_id'])
+        if provider_vos.count() == 1:
+            return provider_vos[0].to_dict()
+        else:
+            provider_data = self.remote_repository_mgr.get_resource_from_remote_repository(
+                'Provider', domain_id=params['domain_id'],
+                only=params.get('only'),
+                provider=params['provider']
+            )
 
-        if provider_vo := self.remote_repository_mgr.get_provider(params['provider'], params['domain_id'], params.get('only')):
-            return provider_vo
+            if provider_data:
+                return provider_data
 
         raise ERROR_NOT_FOUND(key='provider', value=params['provider'])
 
@@ -87,12 +93,18 @@ class ProviderService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['provider', 'name', 'sync_mode', 'remote_repository_name', 'domain_id'])
+    @append_query_filter(['provider', 'name', 'sync_mode', 'remote_repository_name', 'domain_id'])
     @append_keyword_filter(['provider', 'name'])
     def list(self, params: dict):
         query = params.get('query', {})
 
-        local_providers_data, local_total_count = self.provider_mgr.list_providers(query)
-        remote_providers_data, remote_total_count = self.remote_repository_mgr.list_providers(query)
+        local_providers_vos, local_total_count = self.provider_mgr.list_providers(query)
+        local_providers_data = []
+        for local_provider_vo in local_providers_vos:
+            local_providers_data.append(local_provider_vo.to_dict())
+
+        remote_providers_data, remote_total_count = self.remote_repository_mgr.list_resources_from_remote_repository(
+            'Provider', query)
 
         providers = local_providers_data + remote_providers_data
         total_count = local_total_count + remote_total_count
@@ -100,18 +112,18 @@ class ProviderService(BaseService):
         return providers, total_count
 
     # TODO: phase 3
-    def _create_webhook_into_github(self, params: dict, secret_data: dict):
-        repo_name, _, _ = self._parse_source_url(params['sync_options']['source']['url'])
+    def _create_webhook(self, params: dict, secret_data: dict):
+        repo_name, _, _ = parse_source_url(params['sync_options']['source']['url'])
         config = {
             'webhook_url': 'https://cloudforet.io',
             'token': secret_data['token'],
             'repo_name': repo_name
 
         }
-        self.github_mgr.create_webhook(config)
+        self.source_mgr.create_webhook(config)
 
     @staticmethod
-    def _validate_data(params: dict):
+    def _validate_params_data_schema(params: dict):
         secret_data = {}
 
         if not params.get('sync_mode') or params['sync_mode'] == 'NONE':
@@ -120,65 +132,9 @@ class ProviderService(BaseService):
             if not params.get('sync_options'):
                 raise ERROR_INSUFFICIENT_SYNC_OPTIONS(sync_options=params['sync_options'])
 
-        schema_list = {
-            'sync_mode': Schema(Or('NONE', 'MANUAL', 'AUTOMATIC')),
-            'sync_options': Schema(
-                {
-                    'source_type': 'GITHUB',
-                    'source': {
-                        'url': Regex(
-                            r'[-a-zA-Z0-9@:%._\+~#=]*\/[-a-zA-Z0-9@:%._\+~#=]*\/[-a-zA-Z0-9@:%._\+~#=]*\/[a-z]*\.yaml',
-                            error='Invalid url format, url must be "org/repo_name/directory/provider.yaml"'
-                        ),
-                        Optional('secret_data'): {
-                            'token': str
-                        },
-                    },
-                }
-            ),
-            'schema': Schema([
-                {
-                    'resource_type': Or('identity.ServiceAccount', 'secret.TrustedSecret', 'secret.Secret'),
-                    Optional('secret_type'): Or('GENERAL', 'TRUSTED'),
-                    'schema_id': Or('aws-service-account', 'aws-access-key', 'aws-assume-role')
-                }
-            ]),
-            'description': Schema([
-                {
-                    'resource_type': 'identity.ServiceAccount',
-                    'body': dict
-                }
-            ]),
-            'reference': Schema([
-                {
-                    'resource_type': 'identity.ServiceAccount',
-                    'link': dict
-                }
-            ])
-        }
-
-        for key in schema_list.keys():
-            if params.get(key):
-                schema = schema_list[key]
-                data = params[key]
-                try:
-                    schema.validate(data)
-                except Exception as e:
-                    raise ERROR_INVALID_DATA_SCHEMA(error=e)
-
-        if params.get('sync_mode') in ['MANUAL', 'AUTOMATIC'] and params['sync_options']['source'].get('secret_data'):
-            secret_data = params['sync_options']['source'].pop('secret_data')
+        if params.get('sync_mode') in ['MANUAL', 'AUTOMATIC']:
+            source_type = list(params['sync_options'].keys())[0]
+            if params['sync_options'][source_type].get('token'):
+                secret_data = params['sync_options'][source_type].pop('token')
 
         return params, secret_data
-
-    @staticmethod
-    def _validate_sync_mode(sync_mode: str):
-        if sync_mode not in ['MANUAL', 'AUTOMATIC']:
-            raise ERROR_UNSUPPORT_SYNC_MODE(sync_mode=sync_mode)
-
-    @staticmethod
-    def _parse_source_url(url):
-        repo_name = f'{url.split("/")[0]}/{url.split("/")[1]}'
-        directory = url.split("/")[2]
-        file = url.split("/")[3]
-        return repo_name, directory, file

@@ -4,3 +4,4 @@ mongoengine
 PyGithub
 schema
 pyyaml
+jsonschema
