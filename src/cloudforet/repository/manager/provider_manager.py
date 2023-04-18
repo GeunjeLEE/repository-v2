@@ -1,6 +1,5 @@
 import logging
 import copy
-import copy
 
 from spaceone.core.manager import BaseManager
 from cloudforet.repository.model.provider_model import Provider
@@ -24,11 +23,9 @@ class ProviderManager(BaseManager):
 
         provider_data = provider_vo.to_dict()
         return provider_data
-        provider_data = provider_vo.to_dict()
-        return provider_data
 
     def update_provider(self, params: dict):
-        provider_vo: Provider = self.get_provider_as_vo(params['provider'], params['domain_id'])
+        provider_vo: Provider = self.get_provider(params['provider'], params['domain_id'])
 
         return self.update_provider_by_vo(params, provider_vo)
 
@@ -41,21 +38,12 @@ class ProviderManager(BaseManager):
 
         provider_data = provider_vo.update(params).to_dict()
         return provider_data
-        provider_data = provider_vo.update(params).to_dict()
-        return provider_data
 
     def delete_provider(self, params: dict):
-        provider_vo: Provider = self.get_provider_as_vo(params['provider'], params['domain_id'])
+        provider_vo: Provider = self.get_provider(params['provider'], params['domain_id'])
         provider_vo.delete()
 
     def get_provider(self, provider: str, domain_id: str, only=None):
-        provider_vo = self.get_provider_as_vo(provider=provider, domain_id=domain_id, only=only)
-
-        provider_data = provider_vo.to_dict()
-        return provider_data
-
-    # This function is used when called by update and delete logic.
-    def get_provider_as_vo(self, provider: str, domain_id: str, only=None):
         return self.provider_model.get(provider=provider, domain_id=domain_id, only=only)
 
     def filter_providers(self, **conditions):

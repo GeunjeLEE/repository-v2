@@ -65,7 +65,6 @@ class ProviderService(BaseService):
         validate_sync_mode(provider_data['sync_mode'])
 
         return self.provider_mgr.update_provider_by_vo(provider_data, provider_vo)
-        return self.provider_mgr.update_provider_by_vo(provider_data, provider_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
@@ -92,7 +91,6 @@ class ProviderService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['provider', 'name', 'sync_mode', 'remote_repository_name', 'domain_id'])
     @append_query_filter(['provider', 'name', 'sync_mode', 'remote_repository_name', 'domain_id'])
     @append_keyword_filter(['provider', 'name'])
     def list(self, params: dict):
